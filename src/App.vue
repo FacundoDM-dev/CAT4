@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, watchEffect } from "vue";
+import { ref, watchEffect, onMounted } from "vue";
 import FilterBar from "./components/FilterBar.vue";
 import SearchBar from "./components/SearchBar.vue";
 import PostItList from "./components/PostitList.vue";
@@ -44,13 +44,32 @@ import PostItForm from "./components/PostItForm.vue";
 import ModalLayer from "./components/ModalLayer.vue";
 import axios from "axios";
 
-const apiEndpoint = ref("http://localhost:3000/postit");
+const apiEndpointPost = ref("http://localhost:3000/postit");
+const apiEndpointList = ref("http://localhost:3000/board");
 const showModal = ref(false);
 const searchTerm = ref("");
 const sortBy = ref("");
 const orderBy = ref("");
 const favouriteItems = ref(false);
 const postItList = ref([]);
+
+const loadDataFromApi = async () => {
+  try {
+    const response = await axios.get(apiEndpointList.value);
+    postItList.value = response.data;
+    console.log(postItList.value);
+  } catch (error) {
+    console.error(
+      "Error loading data from API:",
+      error.response || error.message
+    );
+  }
+};
+
+// Llamar al método para cargar los datos al montar el componente
+onMounted(() => {
+  loadDataFromApi();
+});
 
 const addPostIt = async (newPostIt) => {
   try {
@@ -65,24 +84,34 @@ const addPostIt = async (newPostIt) => {
       priority: newPostIt.priority,
       dueDate: newPostIt.dueDate,
       dueTime: newPostIt.dueTime,
-      featured: newPostIt.featured
+      featured: newPostIt.featured,
     };
 
     // Add new Post-It to the API
-    await axios.post('http://localhost:3000/postit', payload);
+    await axios.post(apiEndpointPost.value, payload);
 
-    const response = await axios.get('http://localhost:3000/board');
-    postItList.value = response.data; 
   } catch (error) {
-    console.error('Error adding Post-It:', error.response || error.message);
+    console.error("Error adding Post-It:", error.response || error.message);
   }
 };
-const deletePostIt = (postItId) => {
-  postItList.value = postItList.value.filter(
-    (postIt) => postIt.id !== postItId
-  );
-};
 
+const deletePostIt = async (postItId) => {
+  try {
+    await axios
+      .delete("http://localhost:3000/board", postItId)
+      .then((response) => {
+        console.log(response);
+      });
+    postItList.value = postItList.value.filter(
+      (postIt) => postIt.id !== postItId
+    );
+  } catch (error) {
+    console.error(
+      "Error al eliminar el Post-It:",
+      error.response || error.message
+    );
+  }
+};
 const toggleForm = () => {
   showModal.value = !showModal.value;
 };
@@ -103,7 +132,7 @@ const setFavouriteItems = (favourite) => {
   favouriteItems.value = favourite;
 };
 
-const postItListFiltered = ref([]);
+const postItListFiltered = ref();
 
 watchEffect(() => {
   let filtered = postItList.value;
