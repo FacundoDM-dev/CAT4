@@ -57,7 +57,7 @@ const loadDataFromApi = async () => {
   try {
     const response = await axios.get(apiEndpointList.value);
     postItList.value = response.data;
-    console.log(postItList.value);
+    console.log("dentro de loadDataFromApi", postItList.value);
   } catch (error) {
     console.error(
       "Error loading data from API:",
@@ -66,7 +66,7 @@ const loadDataFromApi = async () => {
   }
 };
 
-// Llamar al método para cargar los datos al montar el componente
+// Call the method to load data when the component is mounted
 onMounted(() => {
   loadDataFromApi();
 });
@@ -89,7 +89,6 @@ const addPostIt = async (newPostIt) => {
 
     // Add new Post-It to the API
     await axios.post(apiEndpointPost.value, payload);
-
   } catch (error) {
     console.error("Error adding Post-It:", error.response || error.message);
   }
@@ -98,20 +97,23 @@ const addPostIt = async (newPostIt) => {
 const deletePostIt = async (postItId) => {
   try {
     await axios
-      .delete("http://localhost:3000/board", postItId)
+      .delete(`${apiEndpointList.value}/${postItId}`)
       .then((response) => {
         console.log(response);
       });
+
+    // Update the list after deleting the Post-It
     postItList.value = postItList.value.filter(
       (postIt) => postIt.id !== postItId
     );
   } catch (error) {
     console.error(
-      "Error al eliminar el Post-It:",
+      "Error deleting the Post-It:",
       error.response || error.message
     );
   }
 };
+
 const toggleForm = () => {
   showModal.value = !showModal.value;
 };
@@ -135,6 +137,7 @@ const setFavouriteItems = (favourite) => {
 const postItListFiltered = ref();
 
 watchEffect(() => {
+  console.log("watchEffect triggered")  
   let filtered = postItList.value;
 
   if (searchTerm.value) {
@@ -166,6 +169,7 @@ watchEffect(() => {
   }
 
   postItListFiltered.value = filtered;
+  console.log("dentro del whatch", postItListFiltered.value);
 });
 </script>
 
